@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اختبار الاستماع والتحدث | Hussein Badr English</title>
+<meta name="description" content="اختبار تفاعلي للاستماع والتحدث بالإنجليزية: 8 أسئلة استماع و4 مهام تحدث مع نتيجة تقديرية.">
+<link rel="canonical" href="https://gnathussinbder-star.github.io/Hussien2009/skills-test.html">
+<meta name="robots" content="index, follow"><meta name="theme-color" content="#101a3a">
+<style>
+:root{--bg:#101a3a;--card:#18244d;--line:#2b3a70;--tx:#f2f5ff;--mu:#b4bedf;--ac:#2a6df4;--ok:#2ecc71;--no:#ff5a5f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.8 system-ui,"Segoe UI",Tahoma,sans-serif}
+main{max-width:640px;margin:auto;padding:24px 16px 56px}h1{font-size:1.5rem;margin:.2em 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px}
+.mu{color:var(--mu)}.bar{height:6px;background:var(--line);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac);width:0;transition:width .3s}
+button{font:inherit;cursor:pointer;min-height:46px;padding:0 20px;border-radius:12px;border:1px solid var(--line);background:#22306a;color:var(--tx)}
+button.p{background:var(--ac);border-color:var(--ac);font-weight:700}button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.opts{display:grid;gap:10px;margin:14px 0}.opts button{text-align:left;direction:ltr}
+.opts .ok{background:#17603a;border-color:var(--ok)}.opts .no{background:#6a2530;border-color:var(--no)}
+.en{direction:ltr;text-align:left;font-size:1.15rem}.tr{direction:ltr;text-align:left;background:#0d1530;border-radius:10px;padding:10px;min-height:46px}
+</style>
+</head>
+<body>
+<main>
+<a class="mu" href="index.html">← الرئيسية</a>
+<h1>اختبار الاستماع والتحدث</h1>
+<p class="mu">8 أسئلة استماع و4 مهام تحدث، نحو 8 دقائق. استخدم سماعة وميكروفونًا في مكان هادئ. النتيجة تقديرية وليست شهادة رسمية.</p>
+<div class="bar" aria-hidden="true"><i id="bar"></i></div>
+<div id="app" class="card" aria-live="polite"></div>
+</main>
+<script>
+const LIS=[
+["My name is Sara and I am from Egypt.","Where is Sara from?",["Egypt","Spain","Iraq"],0],
+["The shop opens at nine and closes at six.","When does the shop close?",["At nine","At six","At eight"],1],
+["I usually drink tea in the morning, but today I want coffee.","What does he want today?",["Tea","Water","Coffee"],2],
+["Excuse me, the bus to the airport leaves from platform four, not platform two.","Which platform is it?",["Platform two","Platform four","Platform six"],1],
+["I was going to call you yesterday, but my phone broke, so I sent an email instead.","How did he contact the person?",["By phone","By email","By text message"],1],
+["The meeting has been moved from Tuesday to Thursday because the manager is travelling.","Why was the meeting moved?",["The manager is travelling","The room is busy","It is a holiday"],0],
+["Although the flight was delayed for three hours, we still arrived in time for the wedding.","What is true?",["They missed the wedding","They arrived in time","The flight was cancelled"],1],
+["Had I known about the traffic, I would have taken the train, which would have saved me an hour.","Why did he drive?",["He did not know about the traffic","He likes driving","The train was expensive"],0]];
+const SPK=[
+{t:"rep",p:"Nice to meet you. My name is Ali."},
+{t:"rep",p:"I would like to book a table for two at seven o'clock."},
+{t:"ans",p:"Tell me about your daily routine.",min:12},
+{t:"ans",p:"Describe a place you would like to visit and why.",min:25}];
+const $=id=>document.getElementById(id),app=$("app");
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let i=0,lis=0,sp=[],plays=0,step=0;const total=LIS.length+SPK.length;
+const bar=()=>$("bar").style.width=(step/total*100)+"%";
+const el=(h)=>{app.innerHTML=h};
+const words=s=>s.toLowerCase().replace(/[^a-z' ]/g,"").split(/\s+/).filter(Boolean);
+
+function intro(){el(`<h2>قبل البدء</h2><p class="mu">سنشغّل صوتًا بالإنجليزية، ثم تجيب. في التحدث سيطلب المتصفح إذن الميكروفون، ولا يحفظ الموقع أي تسجيل.</p><button class="p" id="go">ابدأ الاستماع</button>`);$("go").onclick=()=>{speechSynthesis.cancel();lisQ()}}
+
+function lisQ(){
+ if(i>=LIS.length){i=0;return spkQ()}
+ const [txt,q,o]=LIS[i];plays=0;
+ el(`<p class="mu">استماع ${i+1} من ${LIS.length}</p>
+ <button class="p" id="pl">▶ شغّل الصوت (مرتان كحد أقصى)</button>
+ <p class="en"><b>${q}</b></p><div class="opts" id="op"></div>`);
+ o.forEach((x,k)=>{const b=document.createElement("button");b.textContent=x;b.onclick=()=>pick(k);$("op").appendChild(b)});
+ $("pl").onclick=()=>{
+  if(!window.speechSynthesis){$("pl").textContent="المتصفح لا يدعم الصوت";return}
+  if(plays>=2)return;plays++;speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);u.lang="en-US";u.rate=.9;speechSynthesis.speak(u);
+  if(plays>=2){$("pl").disabled=true;$("pl").textContent="انتهت مرات التشغيل"}
+ };
+}
+function pick(k){
+ const ans=LIS[i][3],bs=[...$("op").children];
+ bs.forEach((b,j)=>{b.disabled=true;if(j===ans)b.classList.add("ok");else if(j===k)b.classList.add("no")});
+ if(k===ans)lis++;step++;bar();i++;
+ setTimeout(lisQ,900);
+}
+
+function spkQ(){
+ if(i>=SPK.length)return result();
+ const s=SPK[i];
+ el(`<p class="mu">تحدث ${i+1} من ${SPK.length}</p>
+ <p class="mu">${s.t==="rep"?"اقرأ الجملة بصوت واضح:":"أجب بالإنجليزية (جمل كاملة):"}</p>
+ <p class="en"><b>${s.p}</b></p>
+ <div class="tr" id="tr" dir="ltr"></div><p class="mu" id="st"></p>
+ <div id="ctl"></div>`);
+ if(!SR){
+  $("st").textContent="متصفحك لا يدعم التعرف على الكلام (جرّب Chrome أو Edge). قيّم نفسك بصدق:";
+  [["لم أستطع",0],["جزئيًا",.5],["بوضوح",1]].forEach(([n,v])=>{const b=document.createElement("button");b.textContent=n;b.onclick=()=>done(v);$("ctl").appendChild(b)});
+  return;
+ }
+ $("ctl").innerHTML=`<button class="p" id="rec">🎙 ابدأ التسجيل</button>`;
+ $("rec").onclick=()=>listen(s);
+}
+function listen(s){
+ const r=new SR();r.lang="en-US";r.interimResults=false;r.maxAlternatives=1;
+ $("rec").disabled=true;$("st").textContent="جارٍ الاستماع... تحدث الآن";
+ r.onresult=e=>{
+  const t=e.results[0][0].transcript;$("tr").textContent=t;
+  const w=words(t);let sc;
+  if(s.t==="rep"){const tg=words(s.p),set=new Set(w);sc=tg.filter(x=>set.has(x)).length/tg.length}
+  else sc=Math.min(1,w.length/s.min);
+  $("st").textContent="تم التسجيل.";
+  $("ctl").innerHTML=`<button class="p" id="nx">التالي</button>`;$("nx").onclick=()=>done(sc);
+ };
+ r.onerror=e=>{
+  $("st").textContent=e.error==="not-allowed"?"تم رفض إذن الميكروفون. فعّله من إعدادات المتصفح ثم أعد المحاولة.":"لم يُلتقط صوت واضح. أعد المحاولة.";
+  $("rec").disabled=false;
+ };
+ r.onend=()=>{if($("rec")&&!$("tr").textContent){$("rec").disabled=false;if(!$("st").textContent.includes("رفض"))$("st").textContent="لم أسمع شيئًا. أعد المحاولة."}};
+ r.start();
+}
+function done(v){sp.push(v);step++;bar();i++;spkQ()}
+
+function lvl(p){return p<25?"A1":p<45?"A2":p<65?"B1":p<85?"B2":"C1"}
+function result(){
+ const L=Math.round(lis/LIS.length*100),S=Math.round(sp.reduce((a,b)=>a+b,0)/SPK.length*100),T=Math.round((L+S)/2);
+ el(`<h2>نتيجتك التقديرية</h2>
+ <p style="font-size:2.4rem;margin:.2em 0"><b>${lvl(T)}</b></p>
+ <p>الاستماع: <b>${lis}/${LIS.length}</b> (${L}%) · المستوى ${lvl(L)}</p>
+ <p>التحدث: <b>${S}%</b> · المستوى ${lvl(S)}</p>
+ <p class="mu">نتيجة إرشادية مبنية على عدد قليل من المهام، وتقييم التحدث آلي تقريبي ولا يقيس النطق بدقة. استخدمها لاختيار نقطة البداية فقط.</p>
+ <button class="p" onclick="location.href='index.html#learning-paths'">اختر مسارك</button>
+ <button onclick="location.reload()">إعادة الاختبار</button>`);
+ try{localStorage.setItem("hb-skills",JSON.stringify({L,S,T,d:Date.now()}))}catch(e){}
+}
+intro();
+</script>
+</body>
+</html>
